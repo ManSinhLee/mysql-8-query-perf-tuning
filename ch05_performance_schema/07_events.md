@@ -1,86 +1,80 @@
-In MySQL's Performance Schema, events represent specific occurrences or activities within the MySQL server that can be monitored for performance analysis. These events are produced by instruments and consumed by consumers. Here are some common types of Performance Schema events along with brief explanations:
+In MySQL 8, the Performance Schema is a powerful tool that provides detailed information about server performance and resource usage. Performance Schema events represent various activities within the MySQL server, and you can use these events to monitor and analyze different aspects of the server's operation. Below are some common categories of Performance Schema events available in MySQL 8:
 
 1. **Statement Events (`events_statements`):**
-   - Events related to the execution of SQL statements.
-
-   Examples:
-   - `statement/sql/select`: Execute a SELECT statement.
-   - `statement/sql/insert`: Execute an INSERT statement.
+   - `statement/sql/*`: Events related to SQL statement execution.
+   - `statement/com/*`: Events related to communication between the client and the server.
 
 2. **Stage Events (`events_stages`):**
-   - Events related to different stages of query execution.
-
-   Examples:
-   - `stage/sql/starting`: The starting stage of query execution.
-   - `stage/sql/executing`: The executing stage of query execution.
+   - `stage/sql/*`: Events related to different stages of SQL statement execution.
 
 3. **Wait Events (`events_waits`):**
-   - Events related to threads waiting for specific conditions.
-
-   Examples:
-   - `wait/synch/mutex/sql/THD::LOCK_thd_data`: Wait for a THD data structure mutex.
-   - `wait/io/table/sql/handler`: Wait for a table handler lock.
+   - `wait/io/*`: Events related to I/O operations.
+   - `wait/synch/*`: Events related to synchronization and locking.
+   - `wait/lock/*`: Events related to various types of locks.
 
 4. **Transaction Events (`events_transactions`):**
-   - Events related to transaction activities.
+   - `transaction/*`: Events related to transaction operations.
 
-   Examples:
-   - `transaction/sql/commit`: SQL commit operation.
-   - `transaction/sql/rollback`: SQL rollback operation.
-
-5. **IO Events (`events_io`):**
-   - Events related to I/O operations.
-
-   Examples:
-   - `file/sql/FRM::fseek`: File seek operation in SQL code.
-   - `file/sql/FRM::fread`: File read operation in SQL code.
+5. **I/O Events (`events_io`):**
+   - `wait/io/file/*`: Events related to file I/O operations.
+   - `wait/io/socket/*`: Events related to socket I/O operations.
 
 6. **Error Events (`events_errors`):**
-   - Events related to error occurrences.
+   - `error/*`: Events related to errors that occurred during execution.
 
-   Examples:
-   - `error/sql/ER_LOCK_DEADLOCK`: Deadlock error in SQL code.
-   - `error/sql/ER_TABLE_EXISTS_ERROR`: Table exists error in SQL code.
+7. **User Events (`events_users`):**
+   - `user/*`: User-defined events.
 
-7. **System Events (`events_system`):**
-   - General system-related events.
+8. **Host Events (`events_hosts`):**
+   - `host/cache/*`: Events related to host cache operations.
 
-   Examples:
-   - `memory/sql/malloc`: Memory allocation in SQL code.
-   - `memory/sql/free`: Memory deallocation in SQL code.
+To query for available events, you can use the corresponding Performance Schema tables. Below are some example queries:
 
-8. **User Events (`events_users`):**
-   - Events related to user activities.
-
-   Examples:
-   - `user/sql/connect`: User connection event.
-   - `user/sql/disconnect`: User disconnection event.
-
-To query for available events, you can use the corresponding tables in the Performance Schema, such as `events_statements`, `events_stages`, `events_waits`, `events_transactions`, `events_io`, `events_errors`, `events_system`, and `events_users`. Here are some example queries:
-
-1. **List All Statement Events:**
+1. **List All Events:**
    ```sql
-   SHOW TABLES LIKE '%events%';
+   SELECT * FROM performance_schema.events_statements;
    ```
 
-2. **List All Wait Events:**
+   This query shows all statement events. You can replace `events_statements` with the appropriate event category table for other types of events.
+
+2. **Filter Events by a Specific User:**
    ```sql
-   SHOW TABLES LIKE '%events_waits%';
+   SELECT * FROM performance_schema.events_statements
+   WHERE USER = 'your_username';
    ```
 
-3. **List All System Events:**
+   Replace `'your_username'` with the MySQL username you are interested in.
+
+3. **Show Recent Statement Events:**
    ```sql
-   SELECT * FROM performance_schema.events_system;
+   SELECT * FROM performance_schema.events_statements_history
+   ORDER BY EVENT_ID DESC
+   LIMIT 10;
    ```
 
-4. **Filter Events by Thread ID:**
+   This query shows the most recent statement events.
+
+4. **List I/O Wait Events:**
    ```sql
-   SELECT * FROM performance_schema.events_statements WHERE THREAD_ID = <your_thread_id>;
+   SELECT * FROM performance_schema.events_waits
+   WHERE EVENT_NAME LIKE 'wait/io%';
    ```
 
-5. **Filter Events by Event Name:**
-   ```sql
-   SELECT * FROM performance_schema.events_transactions WHERE EVENT_NAME LIKE 'transaction/sql%';
-   ```
+   This query shows events related to I/O waits.
 
-These examples demonstrate how to query specific types of events and filter the results based on different criteria. Always refer to the documentation for your specific MySQL version for accurate and detailed information about Performance Schema events and their associated tables.
+5. **Show Recently Waited Events:**
+   ```sql
+   SELECT * FROM performance_schema.events_waits_history
+   ORDER BY TIMER_START DESC
+   LIMIT 10;
+   ```
+   This query shows the most recent wait events.
+
+6. **The correspondence between consumer and table names:**:
+  ```sql
+   SELECT TABLE_NAME FROM performance_schema.setup_consumers c 
+   INNER JOIN information_schema.TABLES t ON t.TABLE_NAME = c.NAME 
+   WHERE t.TABLE_SCHEMA = 'performance_schema' AND c.NAME LIKE 'events%' ORDER BY c.NAME;
+  ```
+
+These examples demonstrate how to query Performance Schema events in MySQL 8. Always refer to the MySQL documentation for your specific version for accurate and detailed information about Performance Schema events and tables.
